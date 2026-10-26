@@ -129,7 +129,7 @@ canvas_string = "".join(outfit_canvas)
 
 # --- Render Results Canvas UI ---
 st.write("---")
-st.write("### 🎨 Your Suggested Wearing Canvas")
+st.write("### 🎨 Your Suggested Wearing")
 
 # The main mood indicator block
 st.markdown(
