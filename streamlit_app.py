@@ -50,7 +50,7 @@ q_temp = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Freezing Cold, 10 is Scorching Hot"
+    help="1 is Cold, 10 is Hot"
 )
 
 # 2. Second Question: Sky/Weather Conditions
@@ -59,7 +59,7 @@ q_sky = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Raining/Cloudy, 10 is Perfectly Sunny"
+    help="1 is Raining/Cloudy, 10 is Sunny"
 )
 
 # 3. Third Question: Transit / Activity Mode
@@ -68,7 +68,7 @@ q_transit = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Heavy Walking, 10 is Sitting in Transportation"
+    help="1 is Walking, 10 is in Transportation"
 )
 
 # --- Logic to generate recommendations based on the 1-10 scales ---
