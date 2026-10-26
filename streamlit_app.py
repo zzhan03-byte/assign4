@@ -31,6 +31,7 @@ with tabs[3]:
     st.subheader(f"Outfit Emoji Suggestion")
     st.markdown("Answer 3 simple questions on a scale of 1 to 10 to draw your customized daily wearing suggestions!")
 
+
 import streamlit as st
 
 # Set up page configurations
@@ -49,7 +50,7 @@ q_temp = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Freezing Cold 🥶, 10 is Scorching Hot 🥵"
+    help="1 is Freezing Cold, 10 is Scorching Hot"
 )
 
 # 2. Second Question: Sky/Weather Conditions
@@ -58,7 +59,7 @@ q_sky = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Raining/Cloudy 🌧️, 10 is Perfectly Sunny ☀️"
+    help="1 is Raining/Cloudy, 10 is Perfectly Sunny"
 )
 
 # 3. Third Question: Transit / Activity Mode
@@ -67,7 +68,7 @@ q_transit = st.slider(
     min_value=1,
     max_value=10,
     value=5,
-    help="1 is Heavy Walking 🚶‍♂️, 10 is Sitting in Transportation 🚗/🚌"
+    help="1 is Heavy Walking, 10 is Sitting in Transportation"
 )
 
 # --- Logic to generate recommendations based on the 1-10 scales ---
