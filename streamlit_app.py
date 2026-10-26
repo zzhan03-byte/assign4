@@ -32,7 +32,9 @@ with tabs[3]:
     st.markdown("Enter a city to check today's current temperature and generate an emoji")
 
 import streamlit as st
-import requests
+import xml.etree.ElementTree as ET
+import urllib.request
+import re
 
 # Set up page configurations
 st.set_page_config(
@@ -44,117 +46,77 @@ st.set_page_config(
 # Function to dynamically generate emojis based on temperature celsius ranges
 def get_temperature_artwork(temp_c):
     if temp_c <= 0:
-        return {
-            "tier": "Freezing",
-            "color": "#17a2b8",
-            "emoji": "🥶",
-            "canvas": "❄️🏔️⛷️🥶🧊⛸️☃️🧣"
-        }
+        return {"tier": "Freezing", "color": "#17a2b8", "emoji": "🥶", "canvas": "❄️🏔️⛷️🥶🧊⛸️☃️🧣"}
     elif 0 < temp_c <= 15:
-        return {
-            "tier": "Chilly / Cool",
-            "color": "#4a90e2",
-            "emoji": "🧥",
-            "canvas": "🍁🍂🧥☕🌲🚶‍♂️🧦🍁"
-        }
+        return {"tier": "Chilly / Cool", "color": "#4a90e2", "emoji": "🧥", "canvas": "🍁🍂🧥☕🌲🚶‍♂️🧦🍁"}
     elif 15 < temp_c <= 25:
-        return {
-            "tier": "Mild / Comfortable",
-            "color": "#28a745",
-            "emoji": "😎",
-            "canvas": "🌸🍃😎🚶‍♀️🚲🌳🌼🌷"
-        }
+        return {"tier": "Mild / Comfortable", "color": "#28a745", "emoji": "😎", "canvas": "🌸🍃😎🚶‍♀️🚲🌳🌼🌷"}
     elif 25 < temp_c <= 35:
-        return {
-            "tier": "Warm / Hot",
-            "color": "#fd7e14",
-            "emoji": "☀️",
-            "canvas": "☀️🕶️🍦🌊🏊‍♂️🥤🏖️🍉"
-        }
-    else:  # More than 35°C
-        return {
-            "tier": "Scorching Hot",
-            "color": "#dc3545",
-            "emoji": "🥵",
-            "canvas": "🥵🔥🌵🧴🍦🥵🥤🐪"
-        }
+        return {"tier": "Warm / Hot", "color": "#fd7e14", "emoji": "☀️", "canvas": "☀️🕶️🍦🌊🏊‍♂️🥤🏖️🍉"}
+    else:
+        return {"tier": "Scorching Hot", "color": "#dc3545", "emoji": "🥵", "canvas": "🥵🔥🌵🧴🍦🥵🥤🐪"}
 
 # 1. User Input for Location
-city_input = st.text_input("Enter a city name:", value="Miami")
+city_input = st.text_input("Enter a US city name:", value="Boston")
 
 if city_input:
     try:
-        # 2. Geocoding API Request
-        geo_url = "https://open-meteo.com"
-        geo_params = {
-            "name": city_input,
-            "count": 1,
-            "language": "en",
-            "format": "json"
-        }
+        # Format input city name for RSS search query
+        formatted_city = city_input.strip().replace(" ", "%20")
+        rss_url = f"https://weather.gov" 
         
-        response = requests.get(geo_url, params=geo_params)
+        # Fallback to direct RSS data query text scanner via a secondary reliable public endpoint
+        # For universal simplicity without key dependencies:
+        wttr_url = f"https://wttr.in{formatted_city}?format=%t"
         
-        if response.status_code == 200:
-            geo_response = response.json()
+        req = urllib.request.Request(
+            wttr_url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as response:
+            raw_text = response.read().decode('utf-8').strip()
             
-            if "results" in geo_response and len(geo_response["results"]) > 0:
-                # FIXED: Added [0] index to grab the first matching dict item inside the list array
-                location_data = geo_response["results"][0]
-                lat = location_data["latitude"]
-                lon = location_data["longitude"]
-                city_name = location_data["name"]
-                country = location_data.get("country", "")
+            # Extract digits from string (e.g. "+12°C" or "55°F")
+            temp_digits = re.findall(r'[-+]?\d+', raw_text)
+            
+            if temp_digits:
+                temp_val = int(temp_digits[0])
                 
-                # 3. Fetch real-time weather details using parsed coordinates
-                weather_url = "https://open-meteo.com"
-                weather_params = {
-                    "latitude": lat,
-                    "longitude": lon,
-                    "current": "temperature_2m"
-                }
-                
-                weather_res = requests.get(weather_url, params=weather_params)
-                
-                if weather_res.status_code == 200:
-                    weather_data = weather_res.json()
-                    current_weather = weather_data["current"]
-                    temp_c = current_weather["temperature_2m"]
-                    temp_f = (temp_c * 9/5) + 32
-                    
-                    # Determine styling and artwork values via temperature logic mapping
-                    art = get_temperature_artwork(temp_c)
-                    
-                    # Display metrics panel
-                    st.write(f"### Current Temperature in **{city_name}, {country}**")
-                    
-                    col1, col2 = st.columns(2)
-                    col1.metric(label="Temperature", value=f"{temp_c}°C / {temp_f:.1f}°F")
-                    col2.metric(label="Temperature Feel", value=f"{art['emoji']} {art['tier']}")
-                    
-                    # 4. Canvas Section: Drawing emojis according to today's temperature tier
-                    st.write("---")
-                    st.write("### 🎨 Your Temperature Emoji Canvas")
-                    
-                    # Central big emoji indicator
-                    st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{art['emoji']}</h1>", unsafe_allow_html=True)
-                    
-                    # Row banner display 
-                    st.markdown(
-                        f"<h3 style='text-align: center; letter-spacing: 12px; "
-                        f"background-color: {art['color']}22; border: 2px solid {art['color']}; "
-                        f"padding: 20px; border-radius: 10px;'>{art['canvas']}</h3>", 
-                        unsafe_allow_html=True
-                    )
+                # Check if the text output implies Celsius or Fahrenheit to align logic
+                if "F" in raw_text:
+                    temp_f = temp_val
+                    temp_c = (temp_f - 32) * 5/9
                 else:
-                    st.error(f"Weather API returned error status: {weather_res.status_code}")
+                    temp_c = temp_val
+                    temp_f = (temp_c * 9/5) + 32
+                
+                art = get_temperature_artwork(temp_c)
+                
+                # Display metrics panel
+                st.write(f"### Current Temperature in **{city_input.title()}**")
+                
+                col1, col2 = st.columns(2)
+                col1.metric(label="Temperature", value=f"{temp_c:.1f}°C / {temp_f:.1f}°F")
+                col2.metric(label="Temperature Feel", value=f"{art['emoji']} {art['tier']}")
+                
+                # 4. Canvas Section
+                st.write("---")
+                st.write("### 🎨 Your Temperature Emoji Canvas")
+                
+                st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{art['emoji']}</h1>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<h3 style='text-align: center; letter-spacing: 12px; "
+                    f"background-color: {art['color']}22; border: 2px solid {art['color']}; "
+                    f"padding: 20px; border-radius: 10px;'>{art['canvas']}</h3>", 
+                    unsafe_allow_html=True
+                )
             else:
-                st.error(f"Could not find a city named '{city_input}'. Please check your spelling and try again.")
-        else:
-            st.error(f"Geocoding API returned error status: {response.status_code}")
-            
+                st.error("Could not parse data for this location. Please try another city.")
+                
     except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
+        st.error(f"Network error handling your request: {e}")
+
 
 
 
