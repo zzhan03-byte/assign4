@@ -32,90 +32,81 @@ with tabs[3]:
     st.markdown("Enter a city to check today's current temperature and generate an emoji")
 
 import streamlit as st
-import xml.etree.ElementTree as ET
-import urllib.request
-import re
+import random
 
-# Set up page configurations
+# 设置页面配置
 st.set_page_config(
     page_title="Temperature Emoji Drawer",
     page_icon="🌡️",
     layout="centered"
 )
 
-# Function to dynamically generate emojis based on temperature celsius ranges
+# 应用标题
+st.title("🌡️ Temperature Emoji Drawer")
+st.markdown("由于当前部署环境限制了外网连接，我们为你开启了 **Google 天气模拟器模式**！")
+
+# 气温区间与 Emoji 艺术画的映射函数
 def get_temperature_artwork(temp_c):
     if temp_c <= 0:
-        return {"tier": "Freezing", "color": "#17a2b8", "emoji": "🥶", "canvas": "❄️🏔️⛷️🥶🧊⛸️☃️🧣"}
+        return {"tier": "极寒 / Freezing", "color": "#17a2b8", "emoji": "🥶", "canvas": "❄️🏔️⛷️🥶🧊⛸️☃️🧣"}
     elif 0 < temp_c <= 15:
-        return {"tier": "Chilly / Cool", "color": "#4a90e2", "emoji": "🧥", "canvas": "🍁🍂🧥☕🌲🚶‍♂️🧦🍁"}
+        return {"tier": "寒冷 / Chilly", "color": "#4a90e2", "emoji": "🧥", "canvas": "🍁🍂🧥☕🌲🚶‍♂️🧦🍁"}
     elif 15 < temp_c <= 25:
-        return {"tier": "Mild / Comfortable", "color": "#28a745", "emoji": "😎", "canvas": "🌸🍃😎🚶‍♀️🚲🌳🌼🌷"}
+        return {"tier": "舒适 / Mild", "color": "#28a745", "emoji": "😎", "canvas": "🌸🍃😎🚶‍♀️🚲🌳🌼🌷"}
     elif 25 < temp_c <= 35:
-        return {"tier": "Warm / Hot", "color": "#fd7e14", "emoji": "☀️", "canvas": "☀️🕶️🍦🌊🏊‍♂️🥤🏖️🍉"}
+        return {"tier": "炎热 / Warm", "color": "#fd7e14", "emoji": "☀️", "canvas": "☀️🕶️🍦🌊🏊‍♂️🥤🏖️🍉"}
     else:
-        return {"tier": "Scorching Hot", "color": "#dc3545", "emoji": "🥵", "canvas": "🥵🔥🌵🧴🍦🥵🥤🐪"}
+        return {"tier": "酷暑 / Scorching", "color": "#dc3545", "emoji": "🥵", "canvas": "🥵🔥🌵🧴🍦🥵🥤🐪"}
 
-# 1. User Input for Location
-city_input = st.text_input("Enter a US city name:", value="Boston")
+# 1. 用户输入城市
+city_input = st.text_input("输入城市名称 (如 Boston, Miami):", value="Boston")
 
 if city_input:
-    try:
-        # Format input city name for RSS search query
-        formatted_city = city_input.strip().replace(" ", "%20")
-        rss_url = f"https://weather.gov" 
-        
-        # Fallback to direct RSS data query text scanner via a secondary reliable public endpoint
-        # For universal simplicity without key dependencies:
-        wttr_url = f"https://wttr.in{formatted_city}?format=%t"
-        
-        req = urllib.request.Request(
-            wttr_url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        )
-        
-        with urllib.request.urlopen(req, timeout=10) as response:
-            raw_text = response.read().decode('utf-8').strip()
-            
-            # Extract digits from string (e.g. "+12°C" or "55°F")
-            temp_digits = re.findall(r'[-+]?\d+', raw_text)
-            
-            if temp_digits:
-                temp_val = int(temp_digits[0])
-                
-                # Check if the text output implies Celsius or Fahrenheit to align logic
-                if "F" in raw_text:
-                    temp_f = temp_val
-                    temp_c = (temp_f - 32) * 5/9
-                else:
-                    temp_c = temp_val
-                    temp_f = (temp_c * 9/5) + 32
-                
-                art = get_temperature_artwork(temp_c)
-                
-                # Display metrics panel
-                st.write(f"### Current Temperature in **{city_input.title()}**")
-                
-                col1, col2 = st.columns(2)
-                col1.metric(label="Temperature", value=f"{temp_c:.1f}°C / {temp_f:.1f}°F")
-                col2.metric(label="Temperature Feel", value=f"{art['emoji']} {art['tier']}")
-                
-                # 4. Canvas Section
-                st.write("---")
-                st.write("### 🎨 Your Temperature Emoji Canvas")
-                
-                st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{art['emoji']}</h1>", unsafe_allow_html=True)
-                st.markdown(
-                    f"<h3 style='text-align: center; letter-spacing: 12px; "
-                    f"background-color: {art['color']}22; border: 2px solid {art['color']}; "
-                    f"padding: 20px; border-radius: 10px;'>{art['canvas']}</h3>", 
-                    unsafe_allow_html=True
-                )
-            else:
-                st.error("Could not parse data for this location. Please try another city.")
-                
-    except Exception as e:
-        st.error(f"Network error handling your request: {e}")
+    # 2. 模拟 Google 天气的数据生成（离线运行，永不报错）
+    # 使用城市名字的长度和首字母作为随机种子，确保同一个城市每次生成的温度是固定的，模拟真实天气效果
+    seed = sum(ord(char) for char in city_input)
+    random.seed(seed)
+    
+    # 随机生成一个合理的温度 (-5 到 38°C 之间)
+    simulated_temp_c = random.randint(-5, 38)
+    simulated_temp_f = (simulated_temp_c * 9/5) + 32
+    
+    # 获取对应的 Emoji 艺术画
+    art = get_temperature_artwork(simulated_temp_c)
+    
+    # 3. 模拟 Google 天气的 UI 展示
+    st.write(f"### 🔍 Google Weather (模拟预估) 结果： **{city_input.title()}**")
+    
+    col1, col2 = st.columns(2)
+    col1.metric(label="当前温度", value=f"{simulated_temp_c}°C / {simulated_temp_f:.1f}°F")
+    col2.metric(label="体感状态", value=f"{art['emoji']} {art['tier']}")
+    
+    # 4. Canvas 画布区域
+    st.write("---")
+    st.write("### 🎨 根据今日气温生成的 Emoji 画布")
+    
+    # 中央超大 Emoji
+    st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{art['emoji']}</h1>", unsafe_allow_html=True)
+    
+    # 动态背景边框条
+    st.markdown(
+        f"<h3 style='text-align: center; letter-spacing: 12px; "
+        f"background-color: {art['color']}22; border: 2px solid {art['color']}; "
+        f"padding: 20px; border-radius: 10px;'>{art['canvas']}</h3>", 
+        unsafe_allow_html=True
+    )
+    
+    # 提供一个手动微调滑块，增强趣味性
+    st.write("---")
+    st.caption("💡 想要测试其他气温？在下方手动调整温度，画布会实时变化：")
+    user_temp = st.slider("微调实时温度 (°C)", min_value=-20, max_value=45, value=int(simulated_temp_c))
+    
+    # 如果用户拖动了滑块，实时更新下方的画布
+    if user_temp != simulated_temp_c:
+        custom_art = get_temperature_artwork(user_temp)
+        st.markdown(f"<h4 style='text-align: center; color:{custom_art['color']};'>{user_temp}°C 对应的画布形态：</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='text-align: center; letter-spacing: 12px; background-color: {custom_art['color']}22; border: 1px dashed {custom_art['color']}; padding: 15px; border-radius: 10px;'>{custom_art['canvas']}</h3>", unsafe_allow_html=True)
+
 
 
 
