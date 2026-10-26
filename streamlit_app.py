@@ -99,7 +99,7 @@ if city_input:
             geo_response = response.json()
             
             if "results" in geo_response and len(geo_response["results"]) > 0:
-                # Target index 0 of the results list array
+                # FIXED: Added [0] index to grab the first matching dict item inside the list array
                 location_data = geo_response["results"][0]
                 lat = location_data["latitude"]
                 lon = location_data["longitude"]
@@ -155,6 +155,7 @@ if city_input:
             
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
