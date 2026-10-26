@@ -30,6 +30,10 @@ with tabs[2]:
 with tabs[3]:
     st.subheader(f"Outfit Emoji Suggestion")
     st.markdown("Answer 3 simple questions on a scale of 1 to 10 to draw your customized daily wearing suggestions!")
+    st.markdown("Question 1: 1 is cold, 10 is hot")
+    st.markdown("Question 2: 1 is cloudy/rainning, 10 is sunny")
+    st.markdown("Question 3: 1 is walking, 10 is using transportation")
+
 
 
 import streamlit as st
