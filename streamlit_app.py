@@ -47,7 +47,7 @@ WEATHER_MAPPING = {
     1: {"desc": "Mainly clear", "emoji": "🌤️", "canvas": "🌤️🍃✨🌸🚶"},
     2: {"desc": "Partly cloudy", "emoji": "⛅", "canvas": "⛅🌥️🪁🍃🚶"},
     3: {"desc": "Overcast", "emoji": "☁️", "canvas": "☁️☁️🧱🛋️☕📚"},
-    45: {"desc": "Fog", "emoji": "🌫️", "canvas": "🌫️👻🌲🚗🏮🌫️"},
+    45: {"desc": "Fog", "emoji": "🌫️", "canvas": "🌫️ghost🌲🚗🏮🌫️"},
     48: {"desc": "Depositing rime fog", "emoji": "🌫️", "canvas": "🌫️❄️🌲🏔️🥶"},
     51: {"desc": "Light drizzle", "emoji": "🌦️", "canvas": "🌦️🌱🐌🌾🚶🌱"},
     53: {"desc": "Moderate drizzle", "emoji": "🌦️", "canvas": "🌦️💧🌱🌂👟🍃"},
@@ -62,7 +62,7 @@ WEATHER_MAPPING = {
     71: {"desc": "Slight snowfall", "emoji": "❄️", "canvas": "❄️⛄🎿☃️❄️🌲"},
     73: {"desc": "Moderate snowfall", "emoji": "❄️", "canvas": "❄️❄️⛄☃️🏡🏂❄️"},
     75: {"desc": "Heavy snowfall", "emoji": "❄️", "canvas": "❄️❄️❄️☃️🏔️⛷️🥶❄️"},
-    77: {"desc": "Snow grains", "emoji": "❄️", "canvas": "❄️⚪🥶🧤🧣"},
+    77: {"desc": "Snow grains", "emoji": "❄️", "canvas": "❄️ White circle🥶🧤🧣"},
     80: {"desc": "Slight rain showers", "emoji": "🌦️", "canvas": "🌦️🌦️🏃‍♀️🌈🌱🦆"},
     81: {"desc": "Moderate rain showers", "emoji": "🌧️", "canvas": "🌧️🌊☔💧🏃‍♂️🌂"},
     82: {"desc": "Violent rain showers", "emoji": "⛈️", "canvas": "⛈️🌧️⛈️🌊🛶⛈️"},
@@ -78,9 +78,15 @@ city_input = st.text_input("Enter a city name:", value="Boston")
 
 if city_input:
     try:
-        # 2. Get Geocoding data (Lat/Lon) for the entered city name
-        geo_url = f"https://open-meteo.com{city_input}&count=1&language=en&format=json"
-        geo_response = requests.get(geo_url).json()
+        # 2. FIXED: Geocoding data request URL structure
+        geo_url = "https://open-meteo.com"
+        geo_params = {
+            "name": city_input,
+            "count": 1,
+            "language": "en",
+            "format": "json"
+        }
+        geo_response = requests.get(geo_url, params=geo_params).json()
         
         if "results" in geo_response and len(geo_response["results"]) > 0:
             location_data = geo_response["results"][0]
@@ -90,8 +96,13 @@ if city_input:
             country = location_data.get("country", "")
             
             # 3. Fetch real-time weather details using Lat/Lon
-            weather_url = f"https://open-meteo.com{lat}&longitude={lon}&current=temperature_2m,weather_code"
-            weather_data = requests.get(weather_url).json()
+            weather_url = "https://open-meteo.com"
+            weather_params = {
+                "latitude": lat,
+                "longitude": lon,
+                "current": "temperature_2m,weather_code"
+            }
+            weather_data = requests.get(weather_url, params=weather_params).json()
             
             current_weather = weather_data["current"]
             temp = current_weather["temperature_2m"]
@@ -112,15 +123,16 @@ if city_input:
             st.write("### 🎨 Your Generated Weather Emoji Artwork")
             
             # Big featured icon
-            st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{weather_info['emoji']}</h1>", unsafe_content_code=True)
+            st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{weather_info['emoji']}</h1>", unsafe_allow_html=True)
             
             # Descriptive scenic row of emojis
-            st.markdown(f"<h3 style='text-align: center; letter-spacing: 15px; background-color: #f0f2f6; padding: 20px; border-radius: 10px;'>{weather_info['canvas']}</h3>", unsafe_content_code=True)
+            st.markdown(f"<h3 style='text-align: center; letter-spacing: 15px; background-color: #f0f2f6; padding: 20px; border-radius: 10px;'>{weather_info['canvas']}</h3>", unsafe_allow_html=True)
             
         else:
             st.error(f"Could not find a city named '{city_input}'. Please check your spelling and try again.")
             
     except Exception as e:
         st.error(f"An error occurred while fetching the data: {e}")
+
 
 
