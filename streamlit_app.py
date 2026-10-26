@@ -28,84 +28,125 @@ with tabs[2]:
 
 # Tab 4: New
 with tabs[3]:
-    st.subheader(f"🌡️ Temperature Emoji Drawer")
-    st.markdown("Enter a city to check today's current temperature and generate an emoji")
+    st.subheader(f"Outfit Emoji Suggestion")
+    st.markdown("Answer 3 simple questions on a scale of 1 to 10 to draw your customized daily wearing suggestions!")
 
 import streamlit as st
-import random
 
-# 设置页面配置
+# Set up page configurations
 st.set_page_config(
-    page_title="Temperature Emoji Drawer",
-    page_icon="🌡️",
+    page_title="Outfit Emoji Planner",
+    page_icon="🧥",
     layout="centered"
 )
 
-# 应用标题
-st.title("🌡️ Temperature Emoji Drawer")
-st.markdown("由于当前部署环境限制了外网连接，我们为你开启了 **Google 天气模拟器模式**！")
+st.write("---")
+st.subheader("📋 Quick Questions")
 
-# 气温区间与 Emoji 艺术画的映射函数
-def get_temperature_artwork(temp_c):
-    if temp_c <= 0:
-        return {"tier": "极寒 / Freezing", "color": "#17a2b8", "emoji": "🥶", "canvas": "❄️🏔️⛷️🥶🧊⛸️☃️🧣"}
-    elif 0 < temp_c <= 15:
-        return {"tier": "寒冷 / Chilly", "color": "#4a90e2", "emoji": "🧥", "canvas": "🍁🍂🧥☕🌲🚶‍♂️🧦🍁"}
-    elif 15 < temp_c <= 25:
-        return {"tier": "舒适 / Mild", "color": "#28a745", "emoji": "😎", "canvas": "🌸🍃😎🚶‍♀️🚲🌳🌼🌷"}
-    elif 25 < temp_c <= 35:
-        return {"tier": "炎热 / Warm", "color": "#fd7e14", "emoji": "☀️", "canvas": "☀️🕶️🍦🌊🏊‍♂️🥤🏖️🍉"}
+# 1. First Question: Temperature Feel
+q_temp = st.slider(
+    "1. What do you feel about today's weather?",
+    min_value=1,
+    max_value=10,
+    value=5,
+    help="1 is Freezing Cold 🥶, 10 is Scorching Hot 🥵"
+)
+
+# 2. Second Question: Sky/Weather Conditions
+q_sky = st.slider(
+    "2. How does today's weather look like?",
+    min_value=1,
+    max_value=10,
+    value=5,
+    help="1 is Raining/Cloudy 🌧️, 10 is Perfectly Sunny ☀️"
+)
+
+# 3. Third Question: Transit / Activity Mode
+q_transit = st.slider(
+    "3. What is your plan for going out?",
+    min_value=1,
+    max_value=10,
+    value=5,
+    help="1 is Heavy Walking 🚶‍♂️, 10 is Sitting in Transportation 🚗/🚌"
+)
+
+# --- Logic to generate recommendations based on the 1-10 scales ---
+outfit_canvas = []
+footwear = "👟"  # Default
+accessory = "🎒" # Default
+
+# Temperature clothing layer logic
+if q_temp <= 3:
+    # Cold weather clothing layers
+    clothing_tier = "Heavy Winter Wear"
+    theme_color = "#17a2b8"
+    outfit_canvas.extend(["🥶", "🥶", "🧥", "🧣", "🧤", "👖", "🧦"])
+    footwear = "🥾"  # Heavy winter boots
+elif 4 <= q_temp <= 6:
+    # Mild/Cool layers
+    clothing_tier = "Comfortable Layers"
+    theme_color = "#28a745"
+    outfit_canvas.extend(["😎", "🧥", "👕", "👖"])
+    footwear = "👟"  # Sneakers
+else:
+    # Hot weather minimal clothing
+    clothing_tier = "Light Summer Clothes"
+    theme_color = "#fd7e14"
+    outfit_canvas.extend(["☀️", "🥵", "🕶️", "👕", "🩳"])
+    footwear = "🩴"  # Sandals/Slippers
+
+# Sky / Weather condition protection logic
+if q_sky <= 3:
+    # Rainy / Stormy gear adjustments
+    outfit_canvas.append("☔")
+    if q_temp <= 6:
+        outfit_canvas.append("🧥")  # Rain coat protection
+else:
+    # Sunny protection gear
+    if q_temp >= 5:
+        outfit_canvas.append("🧢")  # Sun cap
+    if q_sky >= 8:
+        outfit_canvas.append("🕶️")  # Sunglasses
+
+# Walking vs. Transportation footwear and baggage logic
+if q_transit <= 4:
+    # Heavy active walking means priority on athletic comfort
+    if footwear != "🩴" and footwear != "🥾":
+        footwear = "👟"  # Force comfortable running shoes
+    accessory = "🎒"    # Backpack for supplies while walking
+else:
+    # Transportation means formal / luxury footwear or light bags are fine
+    if q_temp >= 7:
+        footwear = "🥿"  # Flats / Loafers
     else:
-        return {"tier": "酷暑 / Scorching", "color": "#dc3545", "emoji": "🥵", "canvas": "🥵🔥🌵🧴🍦🥵🥤🐪"}
+        footwear = "👞"  # Dress shoes / Boots
+    accessory = "💼"    # Briefcase or handheld purse
 
-# 1. 用户输入城市
-city_input = st.text_input("输入城市名称 (如 Boston, Miami):", value="Boston")
+# Combine the contextual items into the finalized dynamic array string
+outfit_canvas.append(footwear)
+outfit_canvas.append(accessory)
+canvas_string = "".join(outfit_canvas)
 
-if city_input:
-    # 2. 模拟 Google 天气的数据生成（离线运行，永不报错）
-    # 使用城市名字的长度和首字母作为随机种子，确保同一个城市每次生成的温度是固定的，模拟真实天气效果
-    seed = sum(ord(char) for char in city_input)
-    random.seed(seed)
-    
-    # 随机生成一个合理的温度 (-5 到 38°C 之间)
-    simulated_temp_c = random.randint(-5, 38)
-    simulated_temp_f = (simulated_temp_c * 9/5) + 32
-    
-    # 获取对应的 Emoji 艺术画
-    art = get_temperature_artwork(simulated_temp_c)
-    
-    # 3. 模拟 Google 天气的 UI 展示
-    st.write(f"### 🔍 Google Weather (模拟预估) 结果： **{city_input.title()}**")
-    
-    col1, col2 = st.columns(2)
-    col1.metric(label="当前温度", value=f"{simulated_temp_c}°C / {simulated_temp_f:.1f}°F")
-    col2.metric(label="体感状态", value=f"{art['emoji']} {art['tier']}")
-    
-    # 4. Canvas 画布区域
-    st.write("---")
-    st.write("### 🎨 根据今日气温生成的 Emoji 画布")
-    
-    # 中央超大 Emoji
-    st.markdown(f"<h1 style='text-align: center; font-size: 100px; margin: 0;'>{art['emoji']}</h1>", unsafe_allow_html=True)
-    
-    # 动态背景边框条
-    st.markdown(
-        f"<h3 style='text-align: center; letter-spacing: 12px; "
-        f"background-color: {art['color']}22; border: 2px solid {art['color']}; "
-        f"padding: 20px; border-radius: 10px;'>{art['canvas']}</h3>", 
-        unsafe_allow_html=True
-    )
-    
-    # 提供一个手动微调滑块，增强趣味性
-    st.write("---")
-    st.caption("💡 想要测试其他气温？在下方手动调整温度，画布会实时变化：")
-    user_temp = st.slider("微调实时温度 (°C)", min_value=-20, max_value=45, value=int(simulated_temp_c))
-    
-    # 如果用户拖动了滑块，实时更新下方的画布
-    if user_temp != simulated_temp_c:
-        custom_art = get_temperature_artwork(user_temp)
-        st.markdown(f"<h4 style='text-align: center; color:{custom_art['color']};'>{user_temp}°C 对应的画布形态：</h4>", unsafe_allow_html=True)
-        st.markdown(f"<h3 style='text-align: center; letter-spacing: 12px; background-color: {custom_art['color']}22; border: 1px dashed {custom_art['color']}; padding: 15px; border-radius: 10px;'>{custom_art['canvas']}</h3>", unsafe_allow_html=True)
+# --- Render Results Canvas UI ---
+st.write("---")
+st.write("### 🎨 Your Suggested Wearing Canvas")
+
+# The main mood indicator block
+st.markdown(
+    f"<div style='text-align: center; border: 2px dashed {theme_color}; "
+    f"background-color: {theme_color}11; padding: 25px; border-radius: 12px; margin-top: 15px;'>"
+    f"<p style='font-size: 16px; margin: 0; color: #555; font-weight: bold;'>RECOMMENDED STYLE STYLE: {clothing_tier.upper()}</p>"
+    f"<h1 style='font-size: 60px; letter-spacing: 15px; margin: 15px 0;'>{canvas_string}</h1>"
+    f"</div>", 
+    unsafe_allow_html=True
+)
+
+# Text description details block
+st.write("#### 📝 Breakdowns for Today:")
+st.markdown(f"- **Top & Bottom Layer Basics:** Look out for items matching {canvas_string[2:5] if len(canvas_string) > 4 else '👕'}")
+st.markdown(f"- **Footwear Focus:** Highly optimized for your choice of locomotion ({footwear})")
+st.markdown(f"- **Weather Safeguard:** Environmental protection check items ({'☔ Umbrella/Raincoat active' if q_sky <= 3 else '🧢/🕶️ Sun shield accessories ready'})")
+
 
 
 
